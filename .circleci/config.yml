@@ -1,52 +1,56 @@
 version: 2.1
 
 jobs:
-
   build-test-docker:
-
     docker:
       - image: cimg/openjdk:21.0
 
     steps:
-
       - checkout
 
+      # Run unit tests
       - run:
           name: Run tests
-          command: |
-            mvn clean test
+          command: mvn clean test
 
+      # Create the Spring Boot JAR
       - run:
           name: Build Spring Boot application
-          command: |
-            mvn clean package -DskipTests
+          command: mvn package -DskipTests
 
+      # Enable Docker
       - setup_remote_docker
 
+      # Build Docker image
       - run:
           name: Build Docker image
           command: |
-            docker build \
-              -t $DOCKERHUB_USERNAME/sample-api:$CIRCLE_SHA1 .
+            echo "Building Docker image..."
+            echo "Commit: $CIRCLE_SHA1"
+            ls -la
+            ls -la target || true
 
+            docker build \
+              --progress=plain \
+              -t "${DOCKERHUB_USERNAME}/sample-api:${CIRCLE_SHA1}" .
+
+      # Login to Docker Hub
       - run:
           name: Login to Docker Hub
           command: |
             echo "$DOCKERHUB_PASSWORD" | \
-            docker login \
-              -u "$DOCKERHUB_USERNAME" \
-              --password-stdin
+              docker login \
+                --username "$DOCKERHUB_USERNAME" \
+                --password-stdin
 
+      # Push image
       - run:
           name: Push Docker image
           command: |
             docker push \
-              $DOCKERHUB_USERNAME/sample-api:$CIRCLE_SHA1
-
+              "${DOCKERHUB_USERNAME}/sample-api:${CIRCLE_SHA1}"
 
 workflows:
-
   build:
-
     jobs:
       - build-test-docker
