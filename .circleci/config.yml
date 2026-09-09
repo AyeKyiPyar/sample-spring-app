@@ -1,56 +1,31 @@
+# Use the latest 2.1 version of CircleCI pipeline process engine.
+# See: https://circleci.com/docs/reference/configuration-reference/
 version: 2.1
 
+# Define a job to be invoked later in a workflow.
+# See: https://circleci.com/docs/guides/orchestrate/jobs-steps/#jobs-overview & https://circleci.com/docs/reference/configuration-reference/#jobs
 jobs:
-  build-test-docker:
+  say-hello:
+    # Specify the execution environment. You can specify an image from Docker Hub or use one of our convenience images from CircleCI's Developer Hub.
+    # See: https://circleci.com/docs/guides/execution-managed/executor-intro/ & https://circleci.com/docs/reference/configuration-reference/#executor-job
     docker:
-      - image: cimg/openjdk:21.0
+      # Specify the version you desire here
+      # See: https://circleci.com/developer/images/image/cimg/base
+      - image: cimg/base:current
 
+    # Add steps to the job
+    # See: https://circleci.com/docs/guides/orchestrate/jobs-steps/#steps-overview & https://circleci.com/docs/reference/configuration-reference/#steps
     steps:
+      # Checkout the code as the first step.
       - checkout
-
-      # Run unit tests
       - run:
-          name: Run tests
-          command: mvn clean test
+          name: "Say hello"
+          command: "echo Hello, World!"
 
-      # Create the Spring Boot JAR
-      - run:
-          name: Build Spring Boot application
-          command: mvn package -DskipTests
-
-      # Enable Docker
-      - setup_remote_docker
-
-      # Build Docker image
-      - run:
-          name: Build Docker image
-          command: |
-            echo "Building Docker image..."
-            echo "Commit: $CIRCLE_SHA1"
-            ls -la
-            ls -la target || true
-
-            docker build \
-              --progress=plain \
-              -t "${DOCKERHUB_USERNAME}/sample-api:${CIRCLE_SHA1}" .
-
-      # Login to Docker Hub
-      - run:
-          name: Login to Docker Hub
-          command: |
-            echo "$DOCKERHUB_PASSWORD" | \
-              docker login \
-                --username "$DOCKERHUB_USERNAME" \
-                --password-stdin
-
-      # Push image
-      - run:
-          name: Push Docker image
-          command: |
-            docker push \
-              "${DOCKERHUB_USERNAME}/sample-api:${CIRCLE_SHA1}"
-
+# Orchestrate jobs using workflows
+# See: https://circleci.com/docs/guides/orchestrate/workflows/ & https://circleci.com/docs/reference/configuration-reference/#workflows
 workflows:
-  build:
+  say-hello-workflow: # This is the name of the workflow, feel free to change it to better match your workflow.
+    # Inside the workflow, you define the jobs you want to run.
     jobs:
-      - build-test-docker
+      - say-hello
